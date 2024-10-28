@@ -1,9 +1,9 @@
 import random
 
 # Listas de elementos del juego
-personajes = ["PinguinoEstrella", "PinguinoArcoiris", "PinguinoDulce", "PinguinoNieve", "PinguinoBrillante"]
-habitaciones = ["Plaza", "CuevaDeLaNieve", "TiendaDeRegalos", "Biblioteca", "SalaDeJuegos"]
-armas = ["BolaDeNieve", "Pala", "CanonDeNieve", "SombreroDeFiesta", "CopaDeChocolateCaliente"]
+personajes = ["pinguinoestrella", "pinguinoarcoiris", "pinguinodulce", "pinguinonieve", "pinguinobrillante"]
+habitaciones = ["plaza", "cuevadenieve", "tiendaderegalos", "Biblioteca", "saladejuegos"]
+armas = ["boladenieve", "pala", "Canondenieve", "sombrerodefiesta", "copadechocolatecaliente"]
 
 # Escoger una escena del crimen aleatoria
 escena_crimen = (
@@ -22,20 +22,20 @@ for personaje, habitacion, arma in elementos:
     grupos[habitacion] = (personaje, arma)
     grupos[arma] = (personaje, habitacion)
 
-# Mostrar la escena del crimen para fines de depuración
-print("Escena del crimen:", escena_crimen)  # Para propósitos de depuración (puedes comentarlo para no mostrarlo al jugador)
+# Mostrar la escena del crimen para fines de depuracion
+print("Escena del crimen:", escena_crimen)  # Para propositos de depuracion (puedes comentarlo para no mostrarlo al jugador)
 
-# Función para responder una consulta del usuario y verificar la veracidad
+# Funcion para responder una consulta del usuario y verificar la veracidad
 def responder_consulta(elemento):
     if elemento not in grupos:
         print("Elemento no encontrado en el juego.")
         return
     
     relacionado1, relacionado2 = grupos[elemento]
-    print(f"\nInformación sobre {elemento}:")
+    print(f"\nInformacion sobre {elemento}:")
     print(f"- {elemento} se encuentra en {relacionado1} y lo tiene {relacionado2}.")
     
-    # Verificar la veracidad de cada elemento en relación a la escena del crimen
+    # Verificar la veracidad de cada elemento en relacion a la escena del crimen
     veracidad_relacionado1 = (
         (relacionado1 == escena_crimen[0]) or
         (relacionado1 == escena_crimen[1]) or
@@ -60,10 +60,10 @@ def responder_consulta(elemento):
 # Contador de inspecciones permitidas
 inspecciones_restantes = 5
 
-# Simulación del juego
+# Simulacion del juego
 print("\n--- Bienvenido al juego de Club Penguin ---")
 print("Puedes inspeccionar hasta 5 elementos para averiguar detalles sobre el crimen.")
-print("Después de 5 inspecciones, deberás adivinar al culpable.")
+print("Despues de 5 inspecciones, deberas adivinar al pinguino asesino.")
 
 while inspecciones_restantes > 0:
     consulta = input("\n¿Qué elemento deseas inspeccionar? (escribe 'salir' para terminar): ").strip()
