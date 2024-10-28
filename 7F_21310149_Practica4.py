@@ -1,9 +1,9 @@
 import random
 
 # Listas de elementos del juego
-personajes = ["pinguinoestrella", "pinguinoarcoiris", "pinguinodulce", "pinguinonieve", "pinguinobrillante"]
-habitaciones = ["plaza", "cuevadenieve", "tiendaderegalos", "Biblioteca", "saladejuegos"]
-armas = ["boladenieve", "pala", "Canondenieve", "sombrerodefiesta", "copadechocolatecaliente"]
+personajes = ["Sensei", "Rookie", "Dj", "Puffle", "Agente"]
+habitaciones = ["Plaza", "Dojo", "Submarino", "Biblioteca", "Faro"]
+armas = ["Monaculo", "Pala", "Pico", "Botas", "Taladro"]
 
 # Escoger una escena del crimen aleatoria
 escena_crimen = (
@@ -86,6 +86,6 @@ while inspecciones_restantes > 0:
         
         # Comprobar si el usuario adivinó correctamente
         if (sospechoso, lugar, arma) == escena_crimen:
-            print("\n¡Felicidades! Has acertado en todos los elementos de la escena del crimen.")
+            print("\n¡Felicidades Agente! Has acertado en todos los elementos de la escena del crimen.")
         else:
-            print("\nBuen intento, pero no acertaste en todos los elementos")
+            print("\nBuen intento pinguino, pero no acertaste en todos los elementos")
