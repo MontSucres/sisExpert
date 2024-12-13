@@ -1,0 +1,248 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Dec 13 14:45:36 2024
+
+@author: User
+"""
+
+import sqlite3
+import tkinter as tk
+from tkinter import messagebox, ttk
+
+class SistemaExpertoVeterinario:
+    def __init__(self):
+        # Configuración de base de datos
+        self.conn = sqlite3.connect('sistema_veterinario.db')
+        self.crear_base_datos()
+        self.cargar_datos_iniciales()
+        
+        # Interfaz Gráfica
+        self.ventana_principal = tk.Tk()
+        self.ventana_principal.title("Sistema Experto Veterinario")
+        self.ventana_principal.geometry("600x700")
+        
+        self.inicializar_interfaz()
+    
+    def crear_base_datos(self):
+        cursor = self.conn.cursor()
+        
+        # Tabla de Enfermedades
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS enfermedades (
+            id INTEGER PRIMARY KEY,
+            nombre TEXT UNIQUE,
+            descripcion TEXT
+        )
+        ''')
+        
+        # Tabla de Síntomas
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sintomas (
+            id INTEGER PRIMARY KEY,
+            nombre TEXT UNIQUE
+        )
+        ''')
+        
+        # Tabla de Relaciones
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS enfermedad_sintomas (
+            enfermedad_id INTEGER,
+            sintoma_id INTEGER,
+            peso REAL,
+            FOREIGN KEY(enfermedad_id) REFERENCES enfermedades(id),
+            FOREIGN KEY(sintoma_id) REFERENCES sintomas(id)
+        )
+        ''')
+        
+        self.conn.commit()
+    
+    def cargar_datos_iniciales(self):
+        enfermedades = [
+            ("Moquillo Canino", "Enfermedad viral grave que afecta múltiples sistemas"),
+            ("Parvovirosis", "Infección viral altamente contagiosa"),
+            ("Leishmaniosis", "Enfermedad parasitaria transmitida por mosquitos"),
+            ("Rabia", "Enfermedad viral mortal que afecta el sistema nervioso"),
+            ("Ehrlichiosis", "Enfermedad infecciosa transmitida por garrapatas")
+        ]
+        
+        sintomas_por_enfermedad = {
+            "Moquillo Canino": [
+                ("Fiebre alta", 0.9),
+                ("Descarga nasal", 0.8),
+                ("Tos persistente", 0.7)
+            ],
+            "Parvovirosis": [
+                ("Vómitos", 0.9),
+                ("Diarrea con sangre", 0.9),
+                ("Debilidad extrema", 0.8)
+            ],
+            "Leishmaniosis": [
+                ("Pérdida de peso", 0.7),
+                ("Lesiones en piel", 0.6),
+                ("Decaimiento", 0.5)
+            ],
+            "Rabia": [
+                ("Agresividad inusual", 0.9),
+                ("Salivación excesiva", 0.8),
+                ("Cambios de comportamiento", 0.7)
+            ],
+            "Ehrlichiosis": [
+                ("Fiebre", 0.7),
+                ("Moratones", 0.6),
+                ("Debilidad", 0.5)
+            ]
+        }
+        
+        cursor = self.conn.cursor()
+        
+        # Insertar enfermedades
+        for nombre, descripcion in enfermedades:
+            cursor.execute(
+                "INSERT OR IGNORE INTO enfermedades (nombre, descripcion) VALUES (?, ?)", 
+                (nombre, descripcion)
+            )
+        
+        # Insertar síntomas y relaciones
+        for enfermedad, sintomas in sintomas_por_enfermedad.items():
+            cursor.execute("SELECT id FROM enfermedades WHERE nombre = ?", (enfermedad,))
+            enfermedad_id = cursor.fetchone()[0]
+            
+            for sintoma, peso in sintomas:
+                cursor.execute("INSERT OR IGNORE INTO sintomas (nombre) VALUES (?)", (sintoma,))
+                cursor.execute("SELECT id FROM sintomas WHERE nombre = ?", (sintoma,))
+                sintoma_id = cursor.fetchone()[0]
+                
+                cursor.execute("""
+                    INSERT OR IGNORE INTO enfermedad_sintomas 
+                    (enfermedad_id, sintoma_id, peso) 
+                    VALUES (?, ?, ?)
+                """, (enfermedad_id, sintoma_id, peso))
+        
+        self.conn.commit()
+    
+    def inicializar_interfaz(self):
+        # Frame principal
+        frame_principal = tk.Frame(self.ventana_principal, padx=20, pady=20)
+        frame_principal.pack(fill=tk.BOTH, expand=True)
+        
+        # Título
+        titulo = tk.Label(
+            frame_principal, 
+            text="Sistema Experto Veterinario", 
+            font=("Arial", 16, "bold")
+        )
+        titulo.pack(pady=10)
+        
+        # Sección de síntomas
+        frame_sintomas = tk.Frame(frame_principal)
+        frame_sintomas.pack(fill=tk.X, pady=10)
+        
+        # Obtener síntomas de la base de datos
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT DISTINCT nombre FROM sintomas")
+        sintomas = [row[0] for row in cursor.fetchall()]
+        
+        # Variables de control para checkboxes
+        self.vars_sintomas = {}
+        for sintoma in sintomas:
+            var = tk.BooleanVar()
+            self.vars_sintomas[sintoma] = var
+            checkbox = tk.Checkbutton(
+                frame_sintomas, 
+                text=sintoma, 
+                variable=var, 
+                onvalue=True, 
+                offvalue=False
+            )
+            checkbox.pack(anchor=tk.W)
+        
+        # Botón de diagnóstico
+        boton_diagnostico = tk.Button(
+            frame_principal, 
+            text="Realizar Diagnóstico", 
+            command=self.realizar_diagnostico
+        )
+        boton_diagnostico.pack(pady=10)
+        
+        # Área de resultados
+        self.resultado_texto = tk.Text(
+            frame_principal, 
+            height=10, 
+            width=70
+        )
+        self.resultado_texto.pack(pady=10)
+    
+    def realizar_diagnostico(self):
+        # Obtener síntomas seleccionados
+        sintomas_seleccionados = [
+            sintoma for sintoma, var in self.vars_sintomas.items() if var.get()
+        ]
+        
+        if not sintomas_seleccionados:
+            messagebox.showwarning("Advertencia", "Seleccione al menos un síntoma")
+            return
+        
+        # Consulta para calcular probabilidades de enfermedades
+        cursor = self.conn.cursor()
+        
+        # Preparar consulta dinámica basada en síntomas seleccionados
+        placeholders = ','.join(['?'] * len(sintomas_seleccionados))
+        
+        consulta = f"""
+        SELECT 
+            e.nombre AS enfermedad, 
+            SUM(es.peso) AS probabilidad,
+            e.descripcion
+        FROM 
+            enfermedades e
+        JOIN 
+            enfermedad_sintomas es ON e.id = es.enfermedad_id
+        JOIN 
+            sintomas s ON es.sintoma_id = s.id
+        WHERE 
+            s.nombre IN ({placeholders})
+        GROUP BY 
+            e.nombre, e.descripcion
+        ORDER BY 
+            probabilidad DESC
+        """
+        
+        cursor.execute(consulta, sintomas_seleccionados)
+        resultados = cursor.fetchall()
+        
+        # Calcular probabilidades relativas
+        if resultados:
+            total_probabilidad = sum(prob for _, prob, _ in resultados)
+            
+            # Limpiar área de resultados
+            self.resultado_texto.delete(1.0, tk.END)
+            
+            # Mostrar resultados
+            self.resultado_texto.insert(tk.END, "Diagnóstico Preliminar:\n\n")
+            
+            for enfermedad, prob, descripcion in resultados:
+                probabilidad_porcentaje = (prob / total_probabilidad) * 100
+                self.resultado_texto.insert(
+                    tk.END, 
+                    f"Enfermedad: {enfermedad}\n"
+                    f"Probabilidad: {probabilidad_porcentaje:.2f}%\n"
+                    f"Descripción: {descripcion}\n\n"
+                )
+            
+            self.resultado_texto.insert(
+                tk.END, 
+                "Nota: Este diagnóstico es solo referencial. " 
+                "Consulte a un veterinario profesional."
+            )
+        else:
+            messagebox.showinfo("Resultado", "No se encontraron coincidencias.")
+    
+    def ejecutar(self):
+        self.ventana_principal.mainloop()
+
+def main():
+    sistema = SistemaExpertoVeterinario()
+    sistema.ejecutar()
+
+if __name__ == "__main__":
+    main()
